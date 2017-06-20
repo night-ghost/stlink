@@ -326,6 +326,7 @@ static void set_flash_cr_mer(stlink_t *sl, bool v) {
         val |= cr_mer;
     else
         val &= ~cr_mer;
+        
     stlink_write_debug32(sl, cr_reg, val);
 }
 
@@ -1412,6 +1413,10 @@ uint32_t stlink_calculate_pagesize(stlink_t *sl, uint32_t flashaddr){
  */
 int stlink_erase_flash_page(stlink_t *sl, stm32_addr_t flashaddr)
 {
+
+    /* reset the mass erase bit */
+    set_flash_cr_mer(sl,0);
+
     if (sl->flash_type == STLINK_FLASH_TYPE_F4 || sl->flash_type == STLINK_FLASH_TYPE_L4) {
         /* wait for ongoing op to finish */
         wait_flash_busy(sl);
