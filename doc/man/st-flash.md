@@ -32,6 +32,8 @@ read *FILE* *ADDR* *SIZE*
 erase
 :   Perform a mass erasing of the device firmware
 
+reset
+:   Reset the target
 
 # OPTIONS
 
@@ -47,6 +49,10 @@ erase
 --serial *iSerial*
 :   TODO
 
+--flash=fsize
+:   Where fsize is the size in decimal, octal, or hex followed by an optional multiplier 
+'k' for KB, or 'm' for MB.
+Use a leading "0x" to specify hexadecimal, or a leading zero for octal.
 
 # EXAMPLES
 Flash `firmware.bin` to device
@@ -65,7 +71,7 @@ Erase firmware from device
 
 
 # SEE ALSO
-st-util(1), st-info(1), st-term(1)
+st-util(1), st-info(1)
 
 
 # COPYRIGHT
