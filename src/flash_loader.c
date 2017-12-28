@@ -118,33 +118,25 @@ static const uint8_t loader_code_stm32vl[] = {
 
     static const uint8_t loader_code_stm32f4_lv[] = {
         // flashloaders/stm32f4lv.s
-/*
-@ r0 = source
-@ r1 = target
-@ r2 = wordcount
-@ r3 = flash_base
-@ r4 = temp
+        0x92, 0x00,
 
-*/
-        0x92, 0x00,//                   lsls    r2, r2, #2
-        
-        0x08, 0x4b, //start:            ldr     r3, flash_base
-        0x62, 0xb1,//next:              cbz     r2, done
-        0x04, 0x78,//                   ldr     r4, [r0]
-        0x0c, 0x70,//                   str     r4, [r1]
-//
-        0xdc, 0x89, //wait:             ldrh    r4, [r3, #0x0e]
-        0x14, 0xf0, 0x01, 0x0f, //      tst.w   r4, #1
-        0xfb, 0xd1,     //              bne     wait
-        0x00, 0xf1, 0x01, 0x00,//       add     r0, #4
-        0x01, 0xf1, 0x01, 0x01,//       add     r1, #4
-        0xa2, 0xf1, 0x01, 0x02,//       sub     r2, #1 
-        0xf1, 0xe7,//                   b       next
+        0x08, 0x4b,
+        0x62, 0xb1,
+        0x04, 0x78,
+        0x0c, 0x70,
 
-        0x00, 0xbe,// done:             bkpt  0x0000
-        0x00, 0xbf,//                   nop
+        0xdc, 0x89,
+        0x14, 0xf0, 0x01, 0x0f,
+        0xfb, 0xd1,
+        0x00, 0xf1, 0x01, 0x00,
+        0x01, 0xf1, 0x01, 0x01,
+        0xa2, 0xf1, 0x01, 0x02,
+        0xf1, 0xe7,
 
-        0x00, 0x3c, 0x02, 0x40,/* STM32_FLASH_BASE: .word 0x40022000 */
+        0x00, 0xbe,
+        0x00, 0xbf,
+
+        0x00, 0x3c, 0x02, 0x40,
     };
 
     static const uint8_t loader_code_stm32l4[] = {
@@ -312,7 +304,9 @@ int stlink_flash_loader_write_to_sram(stlink_t *sl, stm32_addr_t* addr, size_t* 
         loader_code = loader_code_stm32f0;
         loader_size = sizeof(loader_code_stm32f0);
     } else if ((sl->chip_id == STLINK_CHIPID_STM32_L4) ||
-	       (sl->chip_id == STLINK_CHIPID_STM32_L43X))
+              (sl->chip_id == STLINK_CHIPID_STM32_L43X) ||
+              (sl->chip_id == STLINK_CHIPID_STM32_L46X) ||
+	       (sl->chip_id == STLINK_CHIPID_STM32_L496X))
       {
         loader_code = loader_code_stm32l4;
         loader_size = sizeof(loader_code_stm32l4);

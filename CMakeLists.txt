@@ -4,7 +4,8 @@ project(stlink C)
 set(PROJECT_DESCRIPTION "Open source version of the STMicroelectronics Stlink Tools")
 set(STLINK_UDEV_RULES_DIR "/etc/udev/rules.d" CACHE PATH "Udev rules directory")
 set(STLINK_MODPROBED_DIR "/etc/modprobe.d" CACHE PATH "modprobe.d directory")
-set(STLINK_LIBRARY_PATH "lib/${CMAKE_LIBRARY_PATH}" CACHE PATH "Target lib directory")
+set(LIB_INSTALL_DIR "lib" CACHE PATH "Main library directory")
+set(STLINK_LIBRARY_PATH "${LIB_INSTALL_DIR}/${CMAKE_LIBRARY_PATH}" CACHE PATH "Target lib directory")
 
 option(STLINK_GENERATE_MANPAGES "Generate manpages with pandoc" OFF)
 
@@ -32,6 +33,11 @@ if (STLINK_HAVE_SYS_MMAN_H)
 	add_definitions(-DSTLINK_HAVE_SYS_MMAN_H)
 endif()
 
+CHECK_INCLUDE_FILE(unistd.h STLINK_HAVE_UNISTD_H)
+if (STLINK_HAVE_UNISTD_H)
+	add_definitions(-DSTLINK_HAVE_UNISTD_H)
+endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE "Debug")
 endif()
@@ -39,11 +45,6 @@ endif()
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
 	include(CTest)
 endif()
-
-# fixup __FILE__ absolute paths in logging module
-# see: https://cmake.org/pipermail/cmake-developers/2015-January/024202.html
-string(LENGTH "${CMAKE_SOURCE_DIR}/" CMAKE_SOURCE_DIR_LENGTH)
-add_definitions(-DCMAKE_SOURCE_DIR_LENGTH=${CMAKE_SOURCE_DIR_LENGTH})
 
 set(STLINK_HEADERS
 	include/stlink.h
@@ -73,10 +74,10 @@ include_directories(include)
 include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(src/mingw)
 if (MSVC)
-    include_directories(src/win32)
-    include_directories(src/getopt)
-    # Use string.h rather than strings.h and disable annoying warnings
-    add_definitions(-DHAVE_STRING_H -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS /wd4710)
+	include_directories(src/win32)
+	include_directories(src/getopt)
+	# Use string.h rather than strings.h and disable annoying warnings
+	add_definitions(-DHAVE_STRING_H -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_WARNINGS /wd4710)
 endif ()
 
 ###

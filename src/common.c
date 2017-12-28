@@ -360,7 +360,6 @@ static void set_flash_cr_mer(stlink_t *sl, bool v) {
         val |= cr_mer;
     else
         val &= ~cr_mer;
-
     stlink_write_debug32(sl, cr_reg, val);
 }
 
@@ -645,7 +644,8 @@ int stlink_load_device_params(stlink_t *sl) {
 
     if (params->flash_type == STLINK_FLASH_TYPE_UNKNOWN) {
         WLOG("Invalid flash type, please check device declaration\n");
-        return -1;
+        sl->flash_size = 0;
+        return 0;
     }
 
     // These are fixed...
@@ -1477,10 +1477,6 @@ uint32_t stlink_calculate_pagesize(stlink_t *sl, uint32_t flashaddr){
  */
 int stlink_erase_flash_page(stlink_t *sl, stm32_addr_t flashaddr)
 {
-
-    /* reset the mass erase bit */
-    set_flash_cr_mer(sl,0);
-
     if (sl->flash_type == STLINK_FLASH_TYPE_F4 || sl->flash_type == STLINK_FLASH_TYPE_L4) {
         /* wait for ongoing op to finish */
         wait_flash_busy(sl);
@@ -1489,7 +1485,10 @@ int stlink_erase_flash_page(stlink_t *sl, stm32_addr_t flashaddr)
         unlock_flash_if(sl);
 
         /* select the page to erase */
-        if (sl->chip_id == STLINK_CHIPID_STM32_L4 || sl->chip_id == STLINK_CHIPID_STM32_L43X) {
+        if ((sl->chip_id == STLINK_CHIPID_STM32_L4) ||
+            (sl->chip_id == STLINK_CHIPID_STM32_L43X) ||
+            (sl->chip_id == STLINK_CHIPID_STM32_L46X) ||
+            (sl->chip_id == STLINK_CHIPID_STM32_L496X)) {
             // calculate the actual bank+page from the address
             uint32_t page = calculate_L4_page(sl, flashaddr);
 
@@ -1514,6 +1513,7 @@ int stlink_erase_flash_page(stlink_t *sl, stm32_addr_t flashaddr)
 
             write_flash_cr_snb(sl, sector);
         }
+        set_flash_cr_mer(sl,0); // reset mass erase bit
 
         /* start erase operation */
         set_flash_cr_strt(sl);
@@ -1864,8 +1864,10 @@ int stlink_write_flash(stlink_t *sl, stm32_addr_t addr, uint8_t* base, uint32_t 
 
         /* TODO: Check that Voltage range is 2.7 - 3.6 V */
         if ((sl->chip_id != STLINK_CHIPID_STM32_L4) &&
-	    (sl->chip_id != STLINK_CHIPID_STM32_L43X))
-	  {
+            (sl->chip_id != STLINK_CHIPID_STM32_L43X) &&
+            (sl->chip_id != STLINK_CHIPID_STM32_L46X) &&
+            (sl->chip_id != STLINK_CHIPID_STM32_L496X)) {
+
             if( sl->version.stlink_v == 1 ) {
                 printf("STLINK V1 cannot read voltage, defaulting to 32-bit writes on F4 devices\n");
                 write_flash_cr_psiz(sl, 2);
@@ -1899,8 +1901,9 @@ int stlink_write_flash(stlink_t *sl, stm32_addr_t addr, uint8_t* base, uint32_t 
         /* set programming mode */
         set_flash_cr_pg(sl);
 
+		size_t buf_size = (sl->sram_size > 0x8000) ? 0x8000 : 0x4000;
         for(off = 0; off < len;) {
-            size_t size = len - off > 0x8000 ? 0x8000 : len - off;
+            size_t size = len - off > buf_size ? buf_size : len - off;
 
             printf("size: %u\n", (unsigned int)size);
 
